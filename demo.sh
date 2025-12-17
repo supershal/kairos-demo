@@ -59,4 +59,4 @@ docker run --platform "${PLATFORM}" --rm -ti \
   --cloud-config /config.yaml
 
 # Copy or override the bootstrap.iso file
-cp "$SCRIPT_DIR/build/bootstrap.iso" "$SCRIPT_DIR/bootstrap.iso"
+cp "$SCRIPT_DIR/build/auroraboot/kairos-*.iso" "$SCRIPT_DIR/bootstrap.iso"

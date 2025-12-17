@@ -36,6 +36,9 @@ CRITOOLS_DEB=${KUBERNETES_MAJOR_MINOR}.0-1.1
 CONTAINERD_VERSION=2.1.4
 CONTAINERD_TARGET_ARCH=amd64
 CONTAINERD_CRI_SOCKET=/run/containerd/containerd.sock
+RUNC_VERSION=1.3.2
+RUNC_TARGET_ARCH=amd64
+
 
 # Kubernetes Configuration
 APISERVER_PORT=6443
@@ -137,6 +140,12 @@ configure_containerd() {
     cp /opt/nkp/nib/etc/systemd/system/containerd.service.d/max-files.conf /etc/systemd/system/containerd.service.d/max-files.conf
     chmod 0644 /etc/systemd/system/containerd.service.d/max-files.conf
 
+    # Download and install runc if tar file is specified
+    curl -fsSLO "https://github.com/opencontainers/runc/releases/download/v${RUNC_VERSION}/runc.${RUNC_TARGET_ARCH}"
+    curl -fsSLO "https://github.com/opencontainers/runc/releases/download/v${RUNC_VERSION}/runc.sha256sum"
+    sha256sum --check "runc.sha256sum"
+    mv "runc.${RUNC_TARGET_ARCH}" /usr/bin/runc
+
     # Install libseccomp2
     retry 5 10 apt-get install -y libseccomp2
 
@@ -144,7 +153,7 @@ configure_containerd() {
     curl -fsSLO "https://github.com/containerd/containerd/releases/download/v${CONTAINERD_VERSION}/containerd-static-${CONTAINERD_VERSION}-linux-${CONTAINERD_TARGET_ARCH}.tar.gz"
     curl -fsSLO "https://github.com/containerd/containerd/releases/download/v${CONTAINERD_VERSION}/containerd-static-${CONTAINERD_VERSION}-linux-${CONTAINERD_TARGET_ARCH}.tar.gz.sha256sum"
     sha256sum --check "containerd-static-${CONTAINERD_VERSION}-linux-${CONTAINERD_TARGET_ARCH}.tar.gz.sha256sum"
-    tar Cxzvf /usr/local "containerd-static-${CONTAINERD_VERSION}-linux-${CONTAINERD_TARGET_ARCH}.tar.gz"
+    tar Cxzvf /usr "containerd-static-${CONTAINERD_VERSION}-linux-${CONTAINERD_TARGET_ARCH}.tar.gz"
 
     # Download and set up containerd systemd service
     mkdir -p /usr/lib/systemd/system
