@@ -1,16 +1,54 @@
 # syntax=docker/dockerfile:1
 
 ARG BASE_IMAGE=ubuntu:24.04
-
+FROM docker.io/mesosphere/nkp-image-builder:v2.17.0-rc.1 AS nib
+FROM ghcr.io/mesosphere/mindthegap:v1.25.1 AS mindthegap
 FROM quay.io/kairos/kairos-init:v0.6.2 AS kairos-init
 
 FROM ${BASE_IMAGE} AS base-kairos
 ARG VERSION
 RUN --mount=type=bind,from=kairos-init,src=/kairos-init,dst=/kairos-init /kairos-init --level debug --version "${VERSION}"
 
-RUN --mount=type=secret,id=ubuntu-pro-token pro attach "$(cat /run/secrets/ubuntu-pro-token)"
-RUN pro status
-RUN pro enable usg
-RUN apt install usg
-RUN usg fix cis_level1_server
-RUN apt install -y rsync
+# RUN --mount=type=secret,id=ubuntu-pro-token pro attach "$(cat /run/secrets/ubuntu-pro-token)"
+##
+##23 256.9 Creating config file /etc/aide/aide.conf.d/31_aide_icinga2 with new version
+#23 258.0 Segmentation fault (core dumped)
+#23 258.1 dpkg: error processing package aide-common (--configure):
+#23 258.1  installed aide-common package post-installation script subprocess returned error exit status 139
+#23 258.1 Setting up bsd-mailx (8.1.2-0.20220412cvs-1build1) ...
+#23 258.1 update-alternatives: using /usr/bin/bsd-mailx to provide /usr/bin/mailx (mailx) in auto mode
+#23 258.1 update-alternatives: warning: skip creation of /usr/share/man/man1/mailx.1.gz because associated file /usr/share/man/man1/bsd-mailx.1.gz (of link group mailx) doesn't exist
+#23 258.1 update-alternatives: warning: skip creation of /usr/share/man/man1/mail.1.gz because associated file /usr/share/man/man1/bsd-mailx.1.gz (of link group mailx) doesn't exist
+#23 258.1 update-alternatives: warning: skip creation of /usr/share/man/man1/Mail.1.gz because associated file /usr/share/man/man1/bsd-mailx.1.gz (of link group mailx) doesn't exist
+#23 258.1 Processing triggers for libc-bin (2.39-0ubuntu8.6) ...
+#23 258.2 Errors were encountered while processing:
+#23 258.2  aide-common
+##
+# RUN pro status
+# RUN pro enable usg
+# RUN apt install usg
+# RUN usg fix cis_level1_server
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    gnupg \
+    ca-certificates \
+    apt-transport-https \
+    software-properties-common \
+    tar \
+    gzip \
+    unzip \
+    iptables \
+    iproute2 \
+    vim \
+    rsync \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=nib /opt /opt
+COPY --from=mindthegap /ko-app/mindthegap /usr/local/bin/mindthegap
+
+# Copy configuration files
+COPY ./dockerfiles/files /opt/nkp/nib
+COPY ./dockerfiles/nib.sh /
+RUN chmod +x /nib.sh
+RUN /nib.sh

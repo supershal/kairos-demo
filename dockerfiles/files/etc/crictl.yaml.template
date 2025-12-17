@@ -1,0 +1,5 @@
+runtime-endpoint: unix://{{CONTAINERD_CRI_SOCKET}}
+image-endpoint: unix://{{CONTAINERD_CRI_SOCKET}}
+timeout: 10
+debug: false
+
