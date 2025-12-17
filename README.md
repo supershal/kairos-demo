@@ -71,25 +71,22 @@ This script will:
 
 1. Build the CIS-hardened base image with Ubuntu Pro
 2. Build bootstrap and final images
-3. Create a KIND cluster
-4. Install cert-manager and Kairos CRDs
-5. Install Kairos OSBuilder operator
-6. Create a bootable ISO from the bootstrap image
-7. Download the ISO as `bootstrap.iso`
+3. Create a bootable ISO from the bootstrap image
+4. Save the ISO as `bootstrap.iso`
 
 ### 2. Deploy to Nutanix (Optional)
 
 If you have access to a Nutanix cluster, you can deploy the ISO using Terraform:
 
 ```bash
+export NUTANIX_USERNAME=your-username
+export NUTANIX_PASSWORD=your-password
+export NUTANIX_ENDPOINT=nutanix-pc-endpoint
 cd terraform
 tofu init
 tofu apply \
   -var="cluster_name=your-cluster" \
   -var="subnet_name=your-subnet" \
-  -var="endpoint=prism-central.example.com:9440" \
-  -var="user=your-username" \
-  -var="password=your-password"
 ```
 
 This will:
@@ -118,6 +115,7 @@ The demo is configured to allow SSH access for users:
 - `jimmidyson`
 - `dkoshkin`
 - `yannickstruyf3`
+- `supershal`
 
 Modify the `ssh_authorized_keys` section in `cloud-config.yaml` to add your own GitHub username or SSH keys.
 
@@ -177,7 +175,8 @@ Edit `cloud-config.yaml` to:
 
 ### Multi-Architecture Support
 
-All images are built for both `linux/arm64` and `linux/amd64` platforms using Docker BuildKit:
+All images can be built for both `linux/arm64` and `linux/amd64` platforms using Docker BuildKit. By default the images are built for only `linux/amd64` architecture.
+
 
 ```bash
 docker buildx build --platform=linux/arm64,linux/amd64 ...
