@@ -39,7 +39,7 @@ docker buildx build --progress=plain \
   --build-arg=VERSION="${VERSION}" \
 	--secret="id=ubuntu-pro-token,env=UBUNTU_PRO_TOKEN" \
   --tag="${OCI_REGISTRY}/base-image:${VERSION}" \
-  "${SCRIPT_DIR}"
+  "${SCRIPT_DIR}/dockerfiles"
 
 print "Building final image..."
 docker buildx build --progress=plain \
@@ -49,7 +49,7 @@ docker buildx build --progress=plain \
   --file="${SCRIPT_DIR}/dockerfiles/Dockerfile.final" \
   --build-arg="BASE_IMAGE_VERSION=${VERSION}" \
   --build-arg="BASE_IMAGE_REGISTRY=${OCI_REGISTRY}" \
-  --tag="${OCI_REGISTRY}/final-image:${VERSION}" "${SCRIPT_DIR}"
+  --tag="${OCI_REGISTRY}/final-image:${VERSION}" "${SCRIPT_DIR}/dockerfiles"
 
 print "Building airgap bundle..."
 docker buildx build --progress=plain \

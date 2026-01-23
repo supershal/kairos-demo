@@ -1,0 +1,102 @@
+#!/bin/sh
+set -e
+
+LOG_FILE="/usr/local/.state/var-log.bind/agent-provider-fc.log"
+
+mkdir -p "$(dirname "$LOG_FILE")"
+touch "$LOG_FILE"
+
+EVENT_TYPE="${1:-}"
+
+if [ "$EVENT_TYPE" != "agent.install" ]; then
+  if [ -z "$EVENT_TYPE" ]; then
+    echo "agent-provider-fc: missing event type (expected first arg). Skipping execution." >> "$LOG_FILE"
+  else
+    echo "agent-provider-fc: received event '$EVENT_TYPE'; expected 'agent.install'. Skipping execution." >> "$LOG_FILE"
+  fi
+  exit 0
+fi
+
+echo "Starting agent-provider-fc for event '$EVENT_TYPE'" >> "$LOG_FILE"
+
+IFACE=dummy0
+IP="169.254.100.1/24"
+
+# Ensure dirs exist
+rm -rf /tmp/etc/systemd/network
+mkdir -p /tmp/etc/systemd/network
+mkdir -p /etc/systemd/network
+
+# ---- Create dummy interface (persistent) ----
+cat > /tmp/etc/systemd/network/10-${IFACE}.netdev <<EOF
+[NetDev]
+Name=${IFACE}
+Kind=dummy
+EOF
+
+# ---- Assign IP to dummy interface ----
+cat > /tmp/etc/systemd/network/20-${IFACE}.network <<EOF
+[Match]
+Name=${IFACE}
+
+[Network]
+Address=${IP}
+EOF
+
+echo "---- networkctl (before systemd-networkd restart) ----" >> "$LOG_FILE"
+if command -v networkctl >/dev/null 2>&1; then
+  networkctl --no-pager status >> "$LOG_FILE" 2>&1 || echo "networkctl status failed (non-zero exit)" >> "$LOG_FILE"
+  echo "---- networkctl list ----" >> "$LOG_FILE"
+  networkctl --no-pager list >> "$LOG_FILE" 2>&1 || echo "networkctl list failed (non-zero exit)" >> "$LOG_FILE"
+else
+  echo "networkctl not found; skipping networkctl logging" >> "$LOG_FILE"
+fi
+# ---- Apply immediately (no reboot) ----
+cp /tmp/etc/systemd/network/* /etc/systemd/network/
+
+echo "content of /etc/systemd/network:" >> "$LOG_FILE"
+cat /etc/systemd/network/* >> "$LOG_FILE"
+# systemd-networkd is already running in initramfs
+systemctl restart systemd-networkd || true
+
+# ---- Log network state (best-effort) ----
+echo "---- networkctl (after systemd-networkd restart) ----" >> "$LOG_FILE"
+if command -v networkctl >/dev/null 2>&1; then
+  networkctl --no-pager status >> "$LOG_FILE" 2>&1 || echo "networkctl status failed (non-zero exit)" >> "$LOG_FILE"
+  echo "---- networkctl list ----" >> "$LOG_FILE"
+  networkctl --no-pager list >> "$LOG_FILE" 2>&1 || echo "networkctl list failed (non-zero exit)" >> "$LOG_FILE"
+else
+  echo "networkctl not found; skipping networkctl logging" >> "$LOG_FILE"
+fi
+
+# ---- Output cloud-config (required for provider) ----
+cat <<EOF
+#cloud-config
+stages:
+  boot:
+    - name: "agent-provider-fc: dummy network (systemd-networkd)"
+      files:
+        - path: /etc/systemd/network/10-${IFACE}.netdev
+          permissions: 0644
+          owner: 0
+          group: 0
+          content: |
+            [NetDev]
+            Name=${IFACE}
+            Kind=dummy
+        - path: /etc/systemd/network/20-${IFACE}.network
+          permissions: 0644
+          owner: 0
+          group: 0
+          content: |
+            [Match]
+            Name=${IFACE}
+
+            [Network]
+            Address=${IP}
+      systemctl:
+        enable:
+          - systemd-networkd
+      commands:
+        - systemctl restart systemd-networkd || true
+EOF

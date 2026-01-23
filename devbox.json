@@ -9,6 +9,7 @@
     "kubernetes-helm@latest",
     "opentofu@latest",
     "pv@latest",
-    "envsubst@latest"
+    "envsubst@latest",
+    "git@latest"
   ]
 }

@@ -61,35 +61,28 @@ export UBUNTU_PRO_TOKEN="your-token"       # Ubuntu Pro token for CIS hardening
 
 ### 1. Build and Create ISO
 
-Run the demo script to build images and create a bootable ISO:
 
 ```bash
-./demo.sh
+./build-iso.sh
 ```
 
 This script will:
 
 1. Build the CIS-hardened base image with Ubuntu Pro
-2. Build bootstrap and final images
-3. Create a KIND cluster
-4. Install cert-manager and Kairos CRDs
-5. Install Kairos OSBuilder operator
-6. Create a bootable ISO from the bootstrap image
-7. Download the ISO as `bootstrap.iso`
+1. Build bootstrap and final OS images
+1. Create kuberentes sysext
+1. Create kubernetes image bundle
+1. Create a bootable ISO from the bootstrap image at `build/bootstrap.iso`
 
 ### 2. Deploy to Nutanix (Optional)
 
 If you have access to a Nutanix cluster, you can deploy the ISO using Terraform:
 
 ```bash
-cd terraform
 export NUTANIX_ENDPOINT="prism-central.example.com:9440"
 export NUTANIX_USERNAME="your-username"
 export NUTANIX_PASSWORD="your-password"
-tofu init
-tofu apply \
-  -var="cluster_name=your-cluster" \
-  -var="subnet_name=your-subnet"
+./deploy-iso.sh
 ```
 
 This will:
