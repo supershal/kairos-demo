@@ -14,6 +14,8 @@ if [ "$EVENT_TYPE" != "agent.install" ]; then
   else
     echo "agent-provider-fc: received event '$EVENT_TYPE'; expected 'agent.install'. Skipping execution." >> "$LOG_FILE"
   fi
+  # Provider expects JSON output
+  echo "{}"
   exit 0
 fi
 
@@ -69,34 +71,6 @@ else
   echo "networkctl not found; skipping networkctl logging" >> "$LOG_FILE"
 fi
 
-# ---- Output cloud-config (required for provider) ----
-cat <<EOF
-#cloud-config
-stages:
-  boot:
-    - name: "agent-provider-fc: dummy network (systemd-networkd)"
-      files:
-        - path: /etc/systemd/network/10-${IFACE}.netdev
-          permissions: 0644
-          owner: 0
-          group: 0
-          content: |
-            [NetDev]
-            Name=${IFACE}
-            Kind=dummy
-        - path: /etc/systemd/network/20-${IFACE}.network
-          permissions: 0644
-          owner: 0
-          group: 0
-          content: |
-            [Match]
-            Name=${IFACE}
-
-            [Network]
-            Address=${IP}
-      systemctl:
-        enable:
-          - systemd-networkd
-      commands:
-        - systemctl restart systemd-networkd || true
-EOF
+# Provider expects JSON object of YipConfig https://github.com/mudler/yip/blob/master/pkg/schema/schema.go
+# we will return an empty object for now
+echo "{}"

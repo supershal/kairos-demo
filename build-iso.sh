@@ -34,7 +34,7 @@ print "Building CIS hardened base image..."
 docker buildx build --progress=plain \
   --platform="${PLATFORM}" \
   --pull \
-  --output=type=docker \
+  --output=type=registry \
   --file="${SCRIPT_DIR}/dockerfiles/Dockerfile.base" \
   --build-arg=VERSION="${VERSION}" \
 	--secret="id=ubuntu-pro-token,env=UBUNTU_PRO_TOKEN" \
